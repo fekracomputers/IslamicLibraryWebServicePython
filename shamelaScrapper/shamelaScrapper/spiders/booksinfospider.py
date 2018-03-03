@@ -4,24 +4,29 @@ from urllib.parse import urljoin
 
 import scrapy
 
+from shamelaScrapper.items import ShamelaOnlineBookInfo
 
-class books_info_spider(scrapy.Spider):
+
+class BooksInfoSpider(scrapy.Spider):
     name = 'books_info'
 
     def start_requests(self):
         urls = [
             'http://shamela.ws/index.php/search/last/page-1/',
+            'http://shamela.ws/rep.php/search/last/page-1'
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
         for book in response.css('td.regular-book'):
+            # read addition date
             yield response.follow(book.xpath('a/@href').extract_first(), self.parse_book)
 
-        next_page = response.xpath("//a[text()='التالي']/@href").extract_first()
-        if next_page is not None:
-            yield response.follow(next_page, callback=self.parse)
+        if self.folow_next:
+            next_page = response.xpath("//a[text()='التالي']/@href").extract_first()
+            if next_page is not None:
+                yield response.follow(next_page, callback=self.parse)
 
     def parse_book(selfselfe, response):
         def select_info_desc_text(info_title):
@@ -39,28 +44,36 @@ class books_info_spider(scrapy.Spider):
                        "@href" % info_title)
 
         def select_link_from_img(img_src):
-            return urljoin(response.url,
-                           response.xpath(
-                               "//div[@style='"
-                               "text-align:center;"
-                               "letter-spacing:"
-                               " 25px;margin:"
-                               " 20px 0;']"
-                               "/a"
-                               "/img[contains(@src,'%s')]"
-                               "/parent::a"
-                               "/@href/@text()" % img_src).extract_first()
-                           )
+            raw_link = response.xpath(
+                # "//div[@style='"
+                # "text-align:center;"
+                # "letter-spacing:"
+                # " 25px;margin:"
+                # " 20px 0;']"
+                # "/a"
+                "//img[contains(@src,'%s')]"
+                "/parent::a"
+                "/@href" % img_src).extract_first()
+            return urljoin(response.url, raw_link) if raw_link else None
 
-        yield {
-            'view_count': int(select_info_desc_text('عدد المشاهدات').extract_first()),
-            'date_added': parse_date(select_info_desc_text('تاريخ الإضافة').extract_first()),
-            'tags': [*map(lambda url:urljoin(response.url,url),select_info_desc_href('الوسوم').extract())],
-            'rar_link': select_link_from_img('bok.png'),
-            'pdf_link': select_link_from_img('pdf.png'),
-            'epub_link': select_link_from_img('epubd.png'),
-            'online_link': select_link_from_img('online.png')
-        }
+        def getRepositoryFromResponse(url):
+            return "/".join(url.split('/')[2:4])
+
+        book = ShamelaOnlineBookInfo()
+        book['id'] = int(response.url.split('/')[-1])
+        book['view_count'] = int(select_info_desc_text('عدد المشاهدات').extract_first())
+        book['date_added'] = parse_date(select_info_desc_text('تاريخ الإضافة').extract_first())
+        book['tags'] = ','.join(
+            [*map(lambda url: (urljoin(response.url, url)) if url else None, select_info_desc_href('الوسوم').extract())])
+        book['rar_link'] = select_link_from_img('bok.png')
+        book['pdf_link'] = select_link_from_img('pdf.png')
+        book['online_link'] = select_link_from_img('online.png')
+        book['epub_link'] = select_link_from_img('epubd.png')
+        book['uploading_user'] = urljoin(response.url,
+                                         response.xpath("//a[contains(@href,'user')]/@href")
+                                         .extract_first())
+        book['repository'] = getRepositoryFromResponse(response.url)
+        yield book
 
 
 arabic_month_names = [None, 'يناير',
@@ -89,6 +102,6 @@ def parse_date(date):
         else:
             raise ValueError('Invalid month name %s' % monthText)
         year = int(m.group(3))
-        return datetime.date(year, monthNumber, day)
+        return datetime.date(year, monthNumber, day).strftime('%Y-%m-%d')
     else:
         raise ValueError('Invalid date format %s' % date)

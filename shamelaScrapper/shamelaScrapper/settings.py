@@ -16,10 +16,10 @@ NEWSPIDER_MODULE = 'shamelaScrapper.spiders'
 
 FEED_EXPORT_ENCODING = 'utf-8'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'shamelaScrapper (+http://www.yourdomain.com)'
+USER_AGENT = 'shamelaScrapper (+http://islam-db.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -65,7 +65,7 @@ COOKIES_ENABLED = False
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'shamelaScrapper.pipelines.ShamelascrapperPipeline': 300,
+   'shamelaScrapper.pipelines.SQLiteInsertPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

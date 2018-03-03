@@ -8,7 +8,14 @@
 import scrapy
 
 
-class ShamelascrapperItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class ShamelaOnlineBookInfo(scrapy.Item):
+    id = scrapy.Field()
+    view_count = scrapy.Field()
+    date_added = scrapy.Field()
+    tags = scrapy.Field()
+    rar_link = scrapy.Field()
+    pdf_link = scrapy.Field()
+    epub_link = scrapy.Field()
+    online_link = scrapy.Field()
+    uploading_user = scrapy.Field()
+    repository = scrapy.Field()
