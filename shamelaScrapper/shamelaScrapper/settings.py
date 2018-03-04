@@ -10,7 +10,7 @@
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
 BOT_NAME = 'shamelaScrapper'
-
+LOG_LEVEL='INFO'
 SPIDER_MODULES = ['shamelaScrapper.spiders']
 NEWSPIDER_MODULE = 'shamelaScrapper.spiders'
 

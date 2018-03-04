@@ -23,46 +23,68 @@ class SQLiteInsertPipeline(object):
 
     def open_spider(self, spider):
         self.connection = apsw.Connection(self.db_file)
-        self.cursor = self.connection.cursor()
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS ' + TABLE_SHAMELA_OFFICIAL +
-                            '(id INTEGER NOT NULL PRIMARY KEY,'
-                            'view_count INTEGER,'
-                            'date_added TEXT,'
-                            'tags TEXT,'
-                            'rar_link TEXT,'
-                            'pdf_link TEXT,'
-                            'online_link TEXT,'
-                            'epub_link TEXT)')
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS ' + TABLE_SHAMELA_REP +
-                            '(id INTEGER NOT NULL PRIMARY KEY,'
-                            'view_count INTEGER,'
-                            'date_added TEXT,'
-                            'rar_link TEXT,'
-                            'uploading_user TEXT)')
+        cursor = self.connection.cursor()
+        cursor.execute('CREATE TABLE IF NOT EXISTS ' + TABLE_SHAMELA_OFFICIAL +
+                       '(id INTEGER NOT NULL PRIMARY KEY,'
+                       'view_count INTEGER,'
+                       'date_added TEXT,'
+                       'tags TEXT,'
+                       'rar_link TEXT,'
+                       'pdf_link TEXT,'
+                       'online_link TEXT,'
+                       'epub_link TEXT)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS ' + TABLE_SHAMELA_REP +
+                       '(id INTEGER NOT NULL PRIMARY KEY,'
+                       'view_count INTEGER,'
+                       'date_added TEXT,'
+                       'rar_link TEXT,'
+                       'uploading_user TEXT)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS `pdf_links` '
+                       '( `link_text` TEXT, `link_value` TEXT, `book_id` INTEGER NOT NULL ,'
+                       'UNIQUE (book_id, link_text,link_value))')
 
     def close_spider(self, spider):
         # self.cursor.close()
         # self.connection.close(True)
+        cursor = self.connection.cursor()
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS `official_date_added` ON `books_shamela_official` (`date_added` DESC)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS `repo_date_added` ON `books_shamela_rep` (`date_added` DESC)")
         pass
 
     def process_item(self, item, spider):
-        if item['repository'] == 'shamela.ws/index.php':
-            self.cursor.execute("INSERT OR REPLACE INTO " + TABLE_SHAMELA_OFFICIAL + " values("
-                                                                                     ":id,"
-                                                                                     ":view_count,"
-                                                                                     ":date_added,"
-                                                                                     ":tags,"
-                                                                                     ":rar_link,"
-                                                                                     ":pdf_link,"
-                                                                                     ":online_link,"
-                                                                                     ":epub_link)"
-                                , dict(item))
-        elif item['repository'] == 'shamela.ws/rep.php':
-            self.cursor.execute("INSERT OR REPLACE INTO " + TABLE_SHAMELA_REP + " values("
-                                                                                ":id,"
-                                                                                ":view_count,"
-                                                                                ":date_added,"
-                                                                                ":rar_link,"
-                                                                                ":uploading_user)"
-                                , dict(item))
+        cursor = self.connection.cursor()
+        if 'rar_link' in item:
+            if item['repository'] == 'shamela.ws/index.php':
+                cursor.execute("INSERT OR REPLACE INTO " + TABLE_SHAMELA_OFFICIAL + " values("
+                                                                                    ":id,"
+                                                                                    ":view_count,"
+                                                                                    ":date_added,"
+                                                                                    ":tags,"
+                                                                                    ":rar_link,"
+                                                                                    ":pdf_link,"
+                                                                                    ":online_link,"
+                                                                                    ":epub_link)"
+                               , dict(item))
+            elif item['repository'] == 'shamela.ws/rep.php':
+                cursor.execute("INSERT OR REPLACE INTO " + TABLE_SHAMELA_REP + " values("
+                                                                               ":id,"
+                                                                               ":view_count,"
+                                                                               ":date_added,"
+                                                                               ":rar_link,"
+                                                                               ":uploading_user)"
+                               , dict(item))
+        else:
+            if item['repository'] == 'shamela.ws/index.php':
+                cursor.execute('Update books_shamela_official set view_count =? where id=?',
+                               (item['view_count'], item['id']))
+            elif item['repository'] == 'shamela.ws/rep.php':
+                cursor.execute('Update books_shamela_rep set view_count =? where id=?',
+                               (item['view_count'], item['id']))
+
+        if 'pdf_links_details' in item:
+            for link in item['pdf_links_details']:
+                cursor.execute("INSERT OR REPLACE INTO pdf_links(link_text,link_value) values(?,?)", link)
+
         return item

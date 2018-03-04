@@ -15,7 +15,9 @@ class ShamelaOnlineBookInfo(scrapy.Item):
     tags = scrapy.Field()
     rar_link = scrapy.Field()
     pdf_link = scrapy.Field()
+    pdf_links_details=scrapy.Field()
     epub_link = scrapy.Field()
     online_link = scrapy.Field()
     uploading_user = scrapy.Field()
     repository = scrapy.Field()
+
