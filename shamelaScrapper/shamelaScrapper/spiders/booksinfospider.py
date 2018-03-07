@@ -1,9 +1,11 @@
 import datetime
 import re
 from urllib.parse import urljoin
+from urllib.request import urlopen
 
 import scrapy
 import apsw
+from scrapy.pipelines.images import ImagesPipeline
 
 from shamelaScrapper.items import ShamelaOnlineBookInfo
 
@@ -71,6 +73,7 @@ class BooksInfoSpider(scrapy.Spider):
         book['id'] = int(book_selector.xpath('a/@href').extract_first().split('/')[-1])
         self.parse_overview_details(book, book_selector.xpath('span[1]/text()').extract_first())
         book['repository'] = self.get_repository_from_response(response.url)
+        #book['pdf_link'] = urlopen()
         return book
 
     def parse_book_details(self, response):

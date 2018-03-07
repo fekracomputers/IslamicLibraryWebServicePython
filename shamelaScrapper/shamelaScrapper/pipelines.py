@@ -40,7 +40,7 @@ class SQLiteInsertPipeline(object):
                        'rar_link TEXT,'
                        'uploading_user TEXT)')
         cursor.execute('CREATE TABLE IF NOT EXISTS `pdf_links` '
-                       '( `link_text` TEXT, `link_value` TEXT, `book_id` INTEGER NOT NULL ,'
+                       '( `repository` TEXT,`link_text` TEXT, `link_value` TEXT, `book_id` INTEGER NOT NULL ,'
                        'UNIQUE (book_id, link_text,link_value))')
 
     def close_spider(self, spider):
@@ -85,6 +85,7 @@ class SQLiteInsertPipeline(object):
 
         if 'pdf_links_details' in item:
             for link in item['pdf_links_details']:
-                cursor.execute("INSERT OR REPLACE INTO pdf_links(link_text,link_value) values(?,?)", link)
+                cursor.execute("INSERT OR REPLACE INTO pdf_links(link_text,link_value,book_id,repository) values(?,?,?,?)",
+                               link+(item['id'],item['repository']))
 
         return item
