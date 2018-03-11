@@ -20,4 +20,5 @@ class ShamelaOnlineBookInfo(scrapy.Item):
     online_link = scrapy.Field()
     uploading_user = scrapy.Field()
     repository = scrapy.Field()
+    cover_photo = scrapy.Field()
 

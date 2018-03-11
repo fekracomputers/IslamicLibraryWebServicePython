@@ -6,6 +6,8 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 import apsw
+import scrapy
+from scrapy.pipelines.images import ImagesPipeline
 
 TABLE_SHAMELA_OFFICIAL = "books_shamela_official"
 TABLE_SHAMELA_REP = "books_shamela_rep"
@@ -85,7 +87,25 @@ class SQLiteInsertPipeline(object):
 
         if 'pdf_links_details' in item:
             for link in item['pdf_links_details']:
-                cursor.execute("INSERT OR REPLACE INTO pdf_links(link_text,link_value,book_id,repository) values(?,?,?,?)",
-                               link+(item['id'],item['repository']))
+                cursor.execute(
+                    "INSERT OR REPLACE INTO pdf_links(link_text,link_value,book_id,repository) values(?,?,?,?)",
+                    link + (item['id'], item['repository']))
 
         return item
+
+
+class CoverPhotosPipeline(ImagesPipeline):
+
+    def get_media_requests(self, item, info):
+        if 'cover_photo' in item and item['cover_photo']:
+            request = scrapy.Request(item['cover_photo'])
+            request.meta['book_id'] = item['id']
+            return request
+        else:
+            return []
+
+    def file_path(self, request, response=None, info=None):
+        return 'full/%s.jpg' % (request.meta['book_id'])
+
+    def thumb_path(self, request, thumb_id, response=None, info=None):
+        return 'thumbs/%s/%s.jpg' % (thumb_id, request.meta['book_id'])

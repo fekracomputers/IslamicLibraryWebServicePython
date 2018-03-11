@@ -5,7 +5,6 @@ from urllib.request import urlopen
 
 import scrapy
 import apsw
-from scrapy.pipelines.images import ImagesPipeline
 
 from shamelaScrapper.items import ShamelaOnlineBookInfo
 
@@ -73,7 +72,7 @@ class BooksInfoSpider(scrapy.Spider):
         book['id'] = int(book_selector.xpath('a/@href').extract_first().split('/')[-1])
         self.parse_overview_details(book, book_selector.xpath('span[1]/text()').extract_first())
         book['repository'] = self.get_repository_from_response(response.url)
-        #book['pdf_link'] = urlopen()
+        # book['pdf_link'] = urlopen()
         return book
 
     def parse_book_details(self, response):
@@ -119,6 +118,10 @@ class BooksInfoSpider(scrapy.Spider):
         book['uploading_user'] = urljoin(response.url,
                                          response.xpath("//a[contains(@href,'user')]/@href")
                                          .extract_first())
+        cover_photo = response.xpath("//div[@id='content']/descendant::img[contains(@src,'cover')]/@src").extract_first()
+        if cover_photo is not None:
+            book['cover_photo'] = cover_photo
+
         if (not pdf_link):
             yield book
         else:
@@ -136,6 +139,9 @@ class BooksInfoSpider(scrapy.Spider):
         link_values = anchors.xpath("@href").extract()
         link_texts = anchors.xpath("text()").extract()
         book['pdf_links_details'] = zip(link_texts, link_values)
+        cover_photo = table.xpath("descendant::img/@src").extract_first()
+        if cover_photo is not None:
+            book['cover_photo'] = cover_photo
         yield book
 
     def parse_overview_details(self, book, string):
